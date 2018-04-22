@@ -13,7 +13,6 @@ import "net/url"
 import "time"
 import "encoding/json"
 import "math/rand"
-import "strings"
 import "flag"
 
 /* API Docs https://developers.cloudflare.com/1.1.1.1/dns-over-https/request-structure/ */
@@ -71,6 +70,18 @@ func (R *Cfdns) worker(server string) {
 	}
 }
 
+// To prevent misinterpretation of the URL, restrict the padding characters to the unreserved URL characters:
+// upper- and lower-case letters, digits, hyphen, period, underscore and tilde. http://stackoverflow.com/a/695469/18829
+const padCharsCf = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"
+
+func getPaddedStrCf(n int) string {
+    s := make([]byte, n)
+    for i := range s {
+        s[i] = padCharsCf[rand.Intn(len(padCharsCf))]
+    }
+    return string(s)
+}
+
 func (R *Cfdns) resolve(https *Https, server string, qname string, qtype int) *Reply {
 	r := Reply{ Status: -1 }
 	v := url.Values{}
@@ -83,7 +94,9 @@ func (R *Cfdns) resolve(https *Https, server string, qname string, qtype int) *R
 		v.Set("edns_client_subnet", *R.edns)
 	}
 	if !*R.nopad {
-		v.Set("random_padding", strings.Repeat(string(65+rand.Intn(26)), rand.Intn(500)))
+		// maximum dnslength+type.length (longest possible Type 5 digits)
+		// minus current to make always equal query lenght url
+		v.Set("random_padding", getPaddedStrCf(259-len(qname)-len(fmt.Sprintf("%d", qtype))))
 	}
 
 	/* query */
@@ -99,3 +112,7 @@ func (R *Cfdns) resolve(https *Https, server string, qname string, qtype int) *R
 
 /* register module */
 var _ = register("cfdns", new(Cfdns))
+
+func initRandCf() {
+    rand.Seed(time.Now().UnixNano())
+}

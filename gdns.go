@@ -13,7 +13,6 @@ import "net/url"
 import "time"
 import "encoding/json"
 import "math/rand"
-import "strings"
 import "flag"
 
 type Gdns struct {
@@ -69,7 +68,7 @@ func (R *Gdns) worker(server string) {
 	}
 }
 
-// To prevent misinterpretation of the URL, restrict the padding characters to the unreserved URL characters: 
+// To prevent misinterpretation of the URL, restrict the padding characters to the unreserved URL characters:
 // upper- and lower-case letters, digits, hyphen, period, underscore and tilde. http://stackoverflow.com/a/695469/18829
 const padChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"
 
